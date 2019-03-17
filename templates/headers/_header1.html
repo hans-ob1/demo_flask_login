@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>AI Singapore | Grant Portal</title>
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/aisg_logo_white.png') }}"/>
+    <!-- Bootstrap core CSS-->
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <!-- Custom fonts for this template-->
+    <link href="{{ url_for('static', filename='font-awesome/css/font-awesome.min.css') }}" rel="stylesheet" type="text/css">
+    <!-- Page level plugin CSS-->
+    <link href="{{ url_for('static', filename='datatables/dataTables.bootstrap4.css') }}" rel="stylesheet">
+    <!-- Custom styles for this template-->
+    <link href="{{ url_for('static', filename='css/sb-admin.css') }}" rel="stylesheet">
+
+  </head>
+
+  <body class="bg-dark">     
+    <div class="container">
+      
+      <!-- flash messages -->
+      <div>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-warning alert-dismissible fade show flashes" role="alert">
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                  {{ message }}
+                </div>
+              {% endfor %}
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      {% block body %}{% endblock %}
+
+    </div>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="{{ url_for('static', filename='jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="{{ url_for('static', filename='jquery-easing/jquery.easing.min.js') }}"></script>
+  </body>
+
+</html>

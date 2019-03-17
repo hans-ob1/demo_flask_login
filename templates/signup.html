@@ -1,0 +1,34 @@
+{% extends "headers/_header1.html" %}
+
+{% block body %}
+    <div class="card card-register mx-auto mt-5" style="margin-bottom: 48px;">
+      <div class="card-header">Register an Account</div>
+      <div class="card-body">
+
+        {% from "_forms/_formhelpers.html" import render_form_register %}
+        <form method="post" action="/register/">
+          <dl>
+            {{render_form_register(form.username)}}
+            {{render_form_register(form.firstname)}}
+            {{render_form_register(form.lastname)}}
+            {{render_form_register(form.email)}}
+            {{render_form_register(form.password)}}
+            {{render_form_register(form.confirm)}}
+            {{recaptcha}}
+            {{render_form_register(form.accept_tos)}}
+          </dl>
+          <p>
+            <input class="btn btn-primary btn-block" type="submit" value="Register">
+          </p>
+        </form>
+
+        {% if error %}
+          <p class="error"><strong>Error:</strong>{{error}}</p>
+        {% endif %}
+
+        <div class="text-center">
+          <a class="d-block small mt-3" href="/">Login Page</a>
+        </div>
+      </div>
+    </div>
+{% endblock %}

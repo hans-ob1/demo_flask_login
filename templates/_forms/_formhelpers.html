@@ -1,0 +1,18 @@
+
+<!-- Registration Form Template -->
+{% macro render_form_register(field) %}
+		<dt>
+			{{ field.label }}
+		</dt>
+
+		<dd> 
+			{{ field(**kwargs) | safe}}
+			{% if field.errors %}
+				<ul class=errors>
+					{% for error in field.errors %}
+						<p class="text-danger text-left">{{ error }}</p>
+					{% endfor %}
+				</ul>
+			{% endif %}
+	  </dd>
+{% endmacro %}

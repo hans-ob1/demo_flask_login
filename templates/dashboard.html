@@ -1,0 +1,40 @@
+{% extends "headers/_header2.html" %}
+
+{% block subbody %}
+
+      <!-- Breadcrumbs-->
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">
+          <strong>
+            {% if post_data['usertype'] == "author" %}
+                Submissions
+            {% endif %}
+          </strong>
+        </li>
+      </ol>
+
+      <!-- Main Elements -->
+      <div class="row">
+        <div class="col-12">
+
+          <!-- Author -->
+          {% if post_data['usertype'] == "author" %}
+
+
+          {% else %}
+            
+              <li class="list-group-item clearfix">
+                <span>You do not have sufficient permission to view this page. Contact site admin for more information</span>
+              </li>
+
+          {% endif %}
+
+          </div>
+        </div>
+
+
+        <script>
+
+        </script>
+
+{% endblock %}
