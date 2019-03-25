@@ -11,13 +11,18 @@ from passlib.hash import sha256_crypt
 from functools import wraps
 
 import gc
+import os
 import datetime
 
 # for database
 import MySQLdb
 from MySQLdb import escape_string as thwart
 
-# get forms
+# email validation
+from itsdangerous import URLSafeTimedSerializer
+from flask_mail import Mail, Message
+
+# get forms 
 from _forms import UserRegistrationForm
 
 
@@ -33,6 +38,19 @@ app.config.update(
         # these keys are for testing, replace with real keys in your deployment server
         RECAPTCHA_SITE_KEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI",
         RECAPTCHA_SECRET_KEY = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
+
+        # mail settings
+        MAIL_SERVER = 'smtp.googlemail.com',
+        MAIL_PORT = 465,
+        MAIL_USE_TLS = False,
+        MAIL_USE_SSL = True,
+
+        # gmail authentication
+        MAIL_USERNAME = os.environ['APP_MAIL_USERNAME'],
+        MAIL_PASSWORD = os.environ['APP_MAIL_PASSWORD'],
+
+        # mail accounts
+        MAIL_DEFAULT_SENDER = 'no-reply@aisingapore.org'
     )
 )
 
@@ -40,6 +58,8 @@ app.config.update(
 recaptcha = ReCaptcha()
 recaptcha.init_app(app)
 
+# setup mailing
+mail = Mail(app)
 
 # ------------> support functions <--------------
 # ** database connection
@@ -63,6 +83,34 @@ def login_required(f):
             flash("You need to login first")
             return redirect(url_for('login'))
     return wrap
+
+# ** token validation
+def generate_confirmation_token(email):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    return serializer.dumps(email, salt=app.config['SECURITY_PASSWORD_SALT'])
+
+# ** confirm token
+def confirm_token(token, expiration=3600):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(
+            token,
+            salt=app.config['SECURITY_PASSWORD_SALT'],
+            max_age=expiration
+        )
+    except:
+        return False
+    return email
+
+# ** email function
+def send_email(to, subject, template):
+    msg = Message(
+        subject,
+        recipients=[to],
+        html=template,
+        sender=app.config['MAIL_DEFAULT_SENDER']
+    )
+    mail.send(msg)
 # -------------< support functions >--------------
 
 
@@ -88,8 +136,7 @@ def login():
                     session['logged_in'] = True
                     session['username'] = request.form['username']
 
-                    flash("You have successfully logged in!")
-                    return redirect(url_for("dashboard"))
+                    return redirect(url_for("unconfirmed"))
 
                 else:
                     error = "Invalid credentials, try again."
@@ -162,7 +209,14 @@ def register():
                 session['logged_in'] = True
                 session['username'] = username
 
-                return redirect(url_for('dashboard'))
+                # email confirmation part
+                token = generate_confirmation_token(email)
+                confirm_url = url_for('confirm_email', token=token, _external=True)
+                html = render_template('user/activate.html', confirm_url=confirm_url)
+                subject = "Email Confirmation"
+                send_email(email,subject,html)
+
+                return redirect(url_for('unconfirmed'))
 
         return render_template("signup.html", form=form)
 
@@ -198,6 +252,67 @@ def dashboard():
     except Exception as e:
         return str(e)
 
+
+# Email Confirmation
+@app.route('/confirm-email/<token>')
+@login_required
+def confirm_email(token):
+
+    try:
+        c, conn = connection()
+        try:
+            # get back our email address from the token
+            email = confirm_token(token)
+        except Exception as e:
+            flash("Confirmation link is invalid or expired.","danger")
+
+        userData = c.execute("SELECT isactive, userID FROM users WHERE email=(%s)", (thwart(email),))
+        userData = c.fetchone()
+
+        if userData != None:
+            if userData[0] == 1:
+                flash("Account already validated. Please login.", "success")
+            else:
+                # update user status
+                user_activate = 1
+                c.execute("UPDATE users SET isactive=(%s) WHERE email=(%s)", (thwart(user_activate),thwart(email),))
+
+                # gc
+                conn.commit()
+                c.close()
+                conn.close()
+                gc.collect()
+
+                flash("You have successfully confirmed your account")     
+        else:
+            flash("Invalid link or token")
+        
+        return redirect(url_for('login'))
+    except Exception as e:
+        return str(e)
+
+# unconfirmed route
+@app.route('/unconfirmed')
+@login_required
+def unconfirmed():
+
+    try:
+        c, conn = connection()
+        curr_user = session['username']
+
+        userData = c.execute("SELECT isactive FROM users WHERE username=(%s)", (thwart(curr_user),))
+        userData = c.fetchone()
+
+        if userData != None:
+            isactivate = userData[0]
+            if isactivate == 1:
+                return redirect(url_for('dashboard'))
+            
+            flash('Please activate your account first!')
+            return render_template('user/unconfirmed.html')
+
+    except Exception as e:
+        return str(e)
 
 # Logout
 @app.route("/logout/")
